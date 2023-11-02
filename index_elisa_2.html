@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Título de la página</title>
+        <!-- Necesario si usas Phoenix, bloquea la carga del fichero JSON por defecto al ser conexión segura -->
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            /* Estilo para las divs "mapa" y "chart-container" */
+            .mapa-container, .chart-container {
+                width: 50%;
+                border-radius: 10px;
+                overflow: hidden;
+                margin: 0 1%;
+            }
+            /* Estilo para la div "mapa" */
+            .mapa-container #mapa {
+                height: 0;
+                padding-bottom: 80%;
+                position: relative;
+            }
+            /* Estilo para hacer los marcos circulares */
+            .mapa-container, .chart-container {
+                box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+            }
+            /* Estilo para hacer el diseño responsive */
+            @media only screen and (max-width: 600px) {
+                .mapa-container, .chart-container {
+                    width: 100%;
+                    margin: 1% 0;
+                }
+            }
+        </style>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="mapa_elisa.js"></script>
+    </head>
+    <body>
+        <header>
+            <h1>Título de la página</h1>
+        </header>
+        <section style="display: flex">
+            <div class="mapa-container">
+                <div id="mapa"></div>
+            </div>
+            <div class="chart-container"></div>
+        </section>
+    </body>
+</html>

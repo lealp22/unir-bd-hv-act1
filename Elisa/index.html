@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <!-- Necesario si usas Phoenix, bloquea la carga del fichro JSON por defecto al ser conexión segura -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="upgrade-insecure-requests" />
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="mapa_elisa.js"></script>
+        <style>
+            path {
+                transition-property: stroke;
+                transition-timing-function: ease-in-out;
+                transition-duration: 200ms;
+            }
+        </style>
+    </head>
+    <body>
+        <section style="display: flex">
+            <div id="mapa" style="margin-right: 1%"></div>
+            <div id="chart-container"></div>
+        </section>
+    </body>
+</html>
