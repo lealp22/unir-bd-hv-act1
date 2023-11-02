@@ -29,6 +29,7 @@ d3.json(
 
         var path = d3.geoPath().projection(projection);
 
+        //Creamos la proyección. Necesaria para transformar la geometría poligonal esférica en geometría plana (Solo Canarias).
         var projectionCanarias =  d3
             .geoMercator()
             .translate([w / 2, h / 2])
@@ -36,14 +37,17 @@ d3.json(
             .center([-12, 35]);
         var pathCanarias = d3.geoPath().projection(projectionCanarias);
 
+        // Se define escala de color
         var escalaColor = d3
             .scaleLinear()
             .domain([0, 20])
             .range(["lightblue", "darkblue"]);
 
-        var flag = false; //booleano para que elimine el nombre de la provincia sólo si se ha clickado alguna vez.
+        // Booleano para que elimine el nombre de la provincia sólo si se ha clickado alguna vez.
+        var flag = false; 
         agregarDesempleoGeo(dat_geo.features, dat_desempleo);
 
+        // Se dibuja mapa con datos de Peninsula
         svg.append("g")
             .attr("id","peninsula")
             .selectAll("path")
@@ -69,6 +73,7 @@ d3.json(
                 borrarTooltip();
             });
 
+        // Se dibuja mapa con datos de Canarias
         svg.append("g").attr("id","canarias").selectAll("path")
             .data(dat_geo.features
                 .filter(function (d){ return d.properties.ccaa =='Canarias'; }), d => d.properties.codigo )
@@ -109,10 +114,13 @@ d3.json(
 
             if (flag_aniadir == true) {
                 codigos.push(d.properties.codigo);
+
+                //Para la etiqueta (select) se eliminan los espacios en blanco porque sino los nombres de provincias con > 1 palabra no los detecta
                 d3.select(
                     "#" + d.properties.provincia.replace(/\s+/g, '')
-                ).attr("fill", "#AD92F1"); //hay que eliminar espacios en blanco porque sino los nombres de provincias con > 1 palabra no los detecta
-                //si el gráfico no existe, lo genero:
+                ).attr("fill", "#AD92F1"); 
+                
+                // Si el gráfico no existe, se genera:
                 if (flag_graph == false) {
                     // Dibuja primera línea con el total nacional
                     crearGrafLineas(
@@ -126,7 +134,7 @@ d3.json(
                         d.properties.codigo,
                         d.properties.provincia
                     );
-                } //si el gráfico está pintado, sólo añado una línea:
+                } //si el gráfico está pintado, sólo se añade una línea:
                 else {
                     drawLines(
                         dat_desempleo[d.properties.codigo]["ambos"],
@@ -134,7 +142,7 @@ d3.json(
                         d.properties.provincia
                     );
                 }
-                //si ya existe la línea de la provincia correspondiente, la elimino:
+                //si ya existe la línea de la provincia correspondiente, se elimina:
             } else {
                 removeLine(d.properties.codigo);
                 d3.select(
@@ -147,8 +155,9 @@ d3.json(
                 );
                 }
             }
-        //  - Escribe el nombre de la provincia y su código en las coordenadas en las que ha clickado.
-        // Si clicka en otra provincia, se elimina la que había.
+        //
+        // Dibuja la etiqueta que se mostrará al pasar el ratón por encima de una provincia
+        // Escribe el nombre de la provincia y su código en las coordenadas en las que ha clickado.
         //
         function pintarTooltip(d) {
             flag = true;
@@ -157,30 +166,37 @@ d3.json(
             pp.id = "name_provincia_mapa";
             pp.setAttribute(
                 "style",
-                "transition-duration: 500ms; transition-property: margin-right; background-color: black; color:white; position: absolute; top: " +
-                    (d3.event.pageY + 10)+ //o ClientX. Mejor pageX, así siempre va a coger las
-                    //coordenadas donde está el mouse, de la otra manera, si amplias la pantalla se descoordina
-                    "px; left: " +
-                    (d3.event.pageX +10) +
-                    "px;"
-            );
-            document.getElementsByTagName("body")[0].appendChild(pp);
-        }
-    
+                "transition-duration: 500ms; transition-property: margin-right; background-color: black; " + 
+                "color:white; position: absolute; top: " +
+                (d3.event.pageY + 10)+ //o ClientX. Mejor pageX, así siempre va a coger las
+                //coordenadas donde está el mouse, de la otra manera, si amplias la pantalla se descoordina
+                "px; left: " +
+                (d3.event.pageX +10) +
+                "px;"
+                );
+                document.getElementsByTagName("body")[0].appendChild(pp);
+            }
+            
+        //
+        // Al quitar el ratón de una provincia (mouseout) se elimina el tooltip utilizado para mostrar el nombre
+        //
         function borrarTooltip() {
             document.getElementById("name_provincia_mapa").remove();
         }
         
+        //
+        // Agrega el % de desempleo de cada provincia a los datos obtenidos del GeoJson
+        //
         function agregarDesempleoGeo(geo, desempleo){
             geo.forEach(function(provincia)  {
                 var paro = parseFloat(String(desempleo[provincia.properties.codigo].ambos['2023'].paro.T3).replaceAll(",","."));
                 provincia.properties.desempleo = paro;
-                
             });
         }
 
-        //----------------------------------------------------------------------------------------------------------------------------------------------------
-        //VARABLES GLOBALES.
+        //---------------------------------------------------------
+        // Variables Globales para el gráfico de líneas
+        //---------------------------------------------------------
         const margin = { top: 70, right: 30, bottom: 40, left: 80 };
         const width = 650 - margin.left - margin.right;
         const height = 300 - margin.top - margin.bottom;

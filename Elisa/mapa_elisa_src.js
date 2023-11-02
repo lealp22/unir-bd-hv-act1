@@ -10,6 +10,7 @@ d3.json(
         var xDom = 0;
         var yDom = 0;
 
+     //   d3.select("body").append("")
         //Creamos el elemento SVG.
         var svg = d3
             .select("#mapa")
@@ -33,23 +34,21 @@ d3.json(
             .geoMercator()
             .translate([w / 2, h / 2])
             .scale(2000)
-            .center([-12, 35]);
-        var pathCanarias = d3.geoPath().projection(projectionCanarias);
+            .center([-17, 34]);
+         var pathCanarias = d3.geoPath().projection(projectionCanarias);
+
 
         var escalaColor = d3
-            .scaleLinear()
-            .domain([0, 20])
-            .range(["lightblue", "darkblue"]);
+                        .scaleLinear()
+                        .domain([0, 20])
+                        .range(["lightblue", "darkblue"]);
 
         var flag = false; //booleano para que elimine el nombre de la provincia sólo si se ha clickado alguna vez.
         agregarDesempleoGeo(dat_geo.features, dat_desempleo);
 
-        svg.append("g")
-            .attr("id","peninsula")
-            .selectAll("path")
+        svg.append("g").attr("id","peninsula").selectAll("path")
             .data(dat_geo.features
-                .filter(function (d){ return d.properties.ccaa !='Canarias'; }), d => d.properties.codigo
-                )
+                .filter(function (d){ return d.properties.ccaa !='Canarias'; }), d => d.properties.codigo )
             .enter()
             .append("path")
             .attr("class", "provincias")
@@ -63,9 +62,10 @@ d3.json(
             .on("click", function (d) {               
                 pintando(d);
             }).on("mouseover", function(d, e) {
-                pintarTooltip(d);
+                pintarTooltip(d, e);
               })
             .on("mouseout", function(d, e) {
+
                 borrarTooltip();
             });
 
@@ -82,115 +82,102 @@ d3.json(
             .attr("id", function (d) {
                 return d.properties.provincia.replace(/\s+/g, '');
             })
-            .on("click", function (d) {
+            .on("click", function (d) {               
                 pintando(d);
-            }).on("mouseover", function(d) {
-                pintarTooltip(d);
+            }).on("mouseover", function(d, e) {
+                pintarTooltip(d, e);
               })
             .on("mouseout", function(d, e) {
 
                 borrarTooltip();
             });
 
+
         /*  - Escribe el nombre de la provincia y su código en las coordenadas en las que ha clickado.
             - Si clicka en otra provincia, se elimina la que había.
         */
         var codigos = [];
         function pintando(d) {
-            //si la provincia ya está dibujada, se elimina.
+            //si la provincia ya está dibujada, se elimina.            
             var flag_aniadir = true;
-            if (codigos.length > 0) {
+            if(codigos.length>0){
                 for (var x in codigos) {
                     if (d.properties.codigo == codigos[x]) {
-                        flag_aniadir = false;
-                    }
+                        flag_aniadir = false;                        
+                    } 
                 }
             }
-
+            
+            
+            
             if (flag_aniadir == true) {
                 codigos.push(d.properties.codigo);
-                d3.select(
-                    "#" + d.properties.provincia.replace(/\s+/g, '')
-                ).attr("fill", "#AD92F1"); //hay que eliminar espacios en blanco porque sino los nombres de provincias con > 1 palabra no los detecta
+                d3.select("#"+d.properties.provincia.replace(/\s+/g, '')).attr("fill", "#AD92F1"); //hay que eliminar espacios en blanco porque sino los nombres de provincias con > 1 palabra no los detecta
                 //si el gráfico no existe, lo genero:
                 if (flag_graph == false) {
-                    // Dibuja primera línea con el total nacional
-                    crearGrafLineas(
-                        dat_desempleo["00"]["ambos"],
-                        "00",
-                        dat_desempleo["00"].nombre
-                    );
-                    // Dibuja primer línea seleccionada
-                    drawLines(
-                        dat_desempleo[d.properties.codigo]["ambos"], 
-                        d.properties.codigo,
-                        d.properties.provincia
-                    );
-                } //si el gráfico está pintado, sólo añado una línea:
+                    //crearGrafLineas(dat_desempleo[d.properties.codigo]["ambos"], d.properties.codigo);
+                    crearGrafLineas(dat_desempleo["00"]["ambos"],0);
+                    drawLines(dat_desempleo[d.properties.codigo]["ambos"], d.properties.codigo);
+                } //si el gráfico está pintado, sólo añado una línea: 
                 else {
-                    drawLines(
-                        dat_desempleo[d.properties.codigo]["ambos"],
-                        d.properties.codigo,
-                        d.properties.provincia
-                    );
+                    drawLines(dat_desempleo[d.properties.codigo]["ambos"], d.properties.codigo);
                 }
                 //si ya existe la línea de la provincia correspondiente, la elimino:
-            } else {
+            }else{
                 removeLine(d.properties.codigo);
-                d3.select(
-                    "#" + d.properties.provincia.replace(/\s+/g, "")
-                ).attr("fill", function (d) {
+                d3.select("#"+d.properties.provincia.replace(/\s+/g, '')).attr("fill",  function (d) {
                     return escalaColor(d.properties.desempleo);
                 });
-                codigos = codigos.filter(
-                    (codigos) => codigos != d.properties.codigo
-                );
-                }
+                codigos = codigos.filter(codigos => codigos != d.properties.codigo);
             }
-        //  - Escribe el nombre de la provincia y su código en las coordenadas en las que ha clickado.
-        // Si clicka en otra provincia, se elimina la que había.
-        //
+        }
+
+   /*  - Escribe el nombre de la provincia y su código en las coordenadas en las que ha clickado.
+        - Si clicka en otra provincia, se elimina la que había.
+        */
         function pintarTooltip(d) {
             flag = true;
             var pp = document.createElement("div");
             pp.textContent = d.properties.provincia + ": " + d.properties.desempleo.toFixed(2) + "% " ;
-            pp.id = "name_provincia_mapa";
+            pp.id = "name_provincia";
             pp.setAttribute(
                 "style",
                 "transition-duration: 500ms; transition-property: margin-right; background-color: black; color:white; position: absolute; top: " +
-                    (d3.event.pageY + 10)+ //o ClientX. Mejor pageX, así siempre va a coger las
+                    (event.pageY + 10)+ //o ClientX. Mejor pageX, así siempre va a coger las
                     //coordenadas donde está el mouse, de la otra manera, si amplias la pantalla se descoordina
                     "px; left: " +
-                    (d3.event.pageX +10) +
+                    (event.pageX +10) +
                     "px;"
             );
+           // pp.style.transition = "margin-right 2s"; //Ni caso
             document.getElementsByTagName("body")[0].appendChild(pp);
         }
     
         function borrarTooltip() {
-            document.getElementById("name_provincia_mapa").remove();
+            document.getElementById("name_provincia").remove();
         }
         
         function agregarDesempleoGeo(geo, desempleo){
             geo.forEach(function(provincia)  {
-                var paro = parseFloat(String(desempleo[provincia.properties.codigo].ambos['2023'].paro.T3).replaceAll(",","."));
+                var paro = parseInt(String(desempleo[provincia.properties.codigo].ambos['2023'].paro.T3).replaceAll(",","."));
                 provincia.properties.desempleo = paro;
                 
             });
         }
-
+        
         //----------------------------------------------------------------------------------------------------------------------------------------------------
         //VARABLES GLOBALES.
-        const margin = { top: 70, right: 30, bottom: 40, left: 80 };
+        const margin = { top: 70, right: 30, bottom: 40, left: 70 };
         const width = 650 - margin.left - margin.right;
-        const height = 300 - margin.top - margin.bottom;
+        const height = 400 - margin.top - margin.bottom;
 
         var x = d3.scaleTime().range([0, width]);
         var y = d3.scaleLinear().range([height, 0]);
 
-        //Función que crea un gráfico de líneas
-        function crearGrafLineas(datos, codigo, ciudad) {
+        //Función que crea un gráfico de líneas de la provincia que se seleccione
+        function crearGrafLineas(datos, codigo) {
             flag_graph = true;
+
             const svg = d3
                 .select("#chart-container")
                 .append("svg")
@@ -208,15 +195,16 @@ d3.json(
             const dataset = [];
             for (var i in datos) {
                 try {
-                    const j = parseFloat(String(datos[i]["paro"]["T1"]).replaceAll(",",".")); //convertimos en float para poder representarlo en las "y"
+                    const j = parseFloat(datos[i]["paro"]["T1"]); //convertimos en float para poder representarlo en las "y"
                     dataset.push({ date: new Date(i), value: j });
                 } catch (err) {
                     console.log(err.message);
                 }
             }
 
-            // Creamos los ejes x e y
             xDom = d3.extent(dataset, (d) => d.date);
+            //yDom = d3.max(dataset, (d) => d.value); //en caso de que quisiéramos ir ajustando el gráfico...
+            // Creamos los ejes x e y
             x.domain(xDom);
             y.domain([0, 50]); //70% de máximo
 
@@ -227,11 +215,25 @@ d3.json(
 
             //y-axis
             svg.append("g").attr("id", "y").call(d3.axisLeft(y));
-            drawLines(datos, codigo, ciudad, "#F49CBB");
+
+            //Línea que se va a dibujar después
+            const line = d3
+                .line()
+                .x((d) => x(d.date))
+                .y((d) => y(d.value));
+
+            //añado la línea al gráfico
+            svg.append("path")
+                .datum(dataset)
+                .attr("fill", "none")
+                .attr("stroke", "red")
+                .attr("stroke-width", 1)
+                .attr("d", line)
+                .attr("id", codigo);
         }
 
         //Cuando el gráfico está ya pintado, sólo necesito pintar las siguientes líneas.
-        function drawLines(datos, codigo, ciudad, color_linea = "#BBC9E4") {
+        function drawLines(datos, codigo) {
             //identifico el gráfico donde lo voy a pintar
             var svg = d3.select("#chart-container").select("#global");
 
@@ -239,7 +241,7 @@ d3.json(
             const dataset = [];
             for (var i in datos) {
                 try {
-                    const j = parseFloat(String(datos[i]["paro"]["T1"]).replaceAll(",",".")); //convertimos en float para poder representarlo en las "y"
+                    const j = parseFloat(datos[i]["paro"]["T1"]); //convertimos en float para poder representarlo en las "y"
                     dataset.push({ date: new Date(i), value: j });
                 } catch (err) {
                     console.log(err.message);
@@ -252,50 +254,47 @@ d3.json(
                 .y((d) => y(d.value));
 
             // Añadir el path al svg
-            path = svg
-                .append("path")
+            svg.append("path")
                 .datum(dataset)
                 .attr("fill", "none")
-                .attr("stroke", color_linea)
-                .attr("stroke-width", 3)
+                .attr("stroke", "steelblue")
+                .attr("stroke-width", 1)
                 .attr("d", line)
-                .attr("id", codigo)
-                .style("mix-blend-mode", "multiply")
-                .on("mouseover", function (d) {
-                    d3.select(this)
-                        .attr("stroke", "steelblue")
-                        .attr("style", "stroke-width: 5 !important; z-index: 999; position: relative;");
-                    crearLetrero(ciudad);
-                })
-                .on("mouseout", function (d) {
-                    d3.select(this)
-                        .attr("stroke", color_linea)
-                        .attr("style", "stroke-width: 3 !important;");
-                    eliminarLetrero(d);
-                });
-        }
+                .attr("id", codigo);
 
-        //Al pasar el mouse por encima de la línea, saldrá un letrero con el nombre de la provincia.
-        function crearLetrero(ciudad) {
-            var pp = document.createElement("div");
-            pp.textContent = ciudad;
-            pp.id = "name_provincia";
-            pp.setAttribute(
-                "style",
-                "background-color: white; opacity:0.7; color:#0E0E52; font-weight: bold; position: absolute; margin-left:7px; top:" +
-                    (d3.event.pageY + 10) +"px; left: " +(d3.event.pageX + 10) +"px;"
-            );
-            // pp.style.transition = "margin-right 2s"; //Ni caso
-            document.getElementsByTagName("body")[0].appendChild(pp);
-        }
+            console.log("punto " +x(dataset[dataset.length-1].date) + ", " + y(dataset[dataset.length-1].value));
+            console.log("punto " +x(dataset[0].date) + ", " + y(dataset[0].value));
 
-        function eliminarLetrero() {
-            document.getElementById("name_provincia").remove();
-        }
+            pintarEtiqueta(codigo,x(dataset[dataset.length-1].date) , y(dataset[dataset.length-1].value) )
 
+
+        }
+        
         //elimina la línea del gráfico cuyo id corresponda con el codigo
         function removeLine(codigo) {
             document.getElementById(codigo).remove();
+            borrarEtiqueta(codigo);
+        }
+        function pintarEtiqueta(provincia, x, y) {
+            flag = true;
+            var pp = document.createElement("div");
+            pp.textContent = provincia;
+            pp.id = "etiquetaProvincia"+provincia;
+            pp.setAttribute(
+                "style",
+                "transition-duration: 500ms; transition-property: margin-right; background-color: black; color:white; position: absolute; top: " +
+                    (y)+ //o ClientX. Mejor pageX, así siempre va a coger las
+                    //coordenadas donde está el mouse, de la otra manera, si amplias la pantalla se descoordina
+                    "px; left: " +
+                    (x +20) +
+                    "px;"
+            );
+           // pp.style.transition = "margin-right 2s"; //Ni caso
+            document.getElementsByTagName("body")[0].appendChild(pp);
+        }
+    
+        function borrarEtiqueta(provincia) {
+            document.getElementById("etiquetaProvincia"+provincia).remove();
         }
     });
 });
